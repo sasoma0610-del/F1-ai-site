@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>F1 GP別AI順位予測</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -14,7 +17,7 @@
         radial-gradient(circle at top left, rgba(225, 6, 0, 0.34), transparent 30%),
         radial-gradient(circle at top right, rgba(0, 212, 255, 0.18), transparent 28%),
         #070707;
-      color: #fff;
+      color: #ffffff;
       font-family: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
     }
 
@@ -24,7 +27,9 @@
       padding: 34px 0 64px;
     }
 
-    .hero { padding: 30px 0 24px; }
+    .hero {
+      padding: 30px 0 24px;
+    }
 
     .eyebrow {
       color: #ff4b45;
@@ -46,7 +51,8 @@
       line-height: 1.8;
     }
 
-    .card, .status-card {
+    .card,
+    .status-card {
       background: rgba(18, 18, 18, 0.94);
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: 18px;
@@ -63,7 +69,7 @@
     }
 
     .small-label {
-      color: #999;
+      color: #999999;
       font-size: 12px;
       margin: 0 0 6px;
       text-transform: uppercase;
@@ -76,7 +82,7 @@
     }
 
     .hint {
-      color: #aaa;
+      color: #aaaaaa;
       font-size: 14px;
       line-height: 1.7;
       margin-top: 0;
@@ -96,7 +102,9 @@
       font-weight: bold;
     }
 
-    #reloadButton:hover { background: #ff2d26; }
+    #reloadButton:hover {
+      background: #ff2d26;
+    }
 
     .race-list {
       display: grid;
@@ -131,7 +139,7 @@
 
     .race-button span,
     .race-button small {
-      color: #aaa;
+      color: #aaaaaa;
     }
 
     .grid {
@@ -143,7 +151,7 @@
     .prediction-row {
       width: 100%;
       display: grid;
-      grid-template-columns: 44px 1fr 88px;
+      grid-template-columns: 44px 1fr 110px;
       align-items: center;
       gap: 12px;
       background: transparent;
@@ -163,7 +171,7 @@
       width: 34px;
       height: 34px;
       background: #e10600;
-      color: #fff;
+      color: #ffffff;
       border-radius: 50%;
       display: grid;
       place-items: center;
@@ -176,7 +184,9 @@
       gap: 4px;
     }
 
-    .prediction-main small { color: #aaa; }
+    .prediction-main small {
+      color: #aaaaaa;
+    }
 
     .score-box {
       background: #242424;
@@ -187,13 +197,33 @@
 
     .score-box small {
       display: block;
-      color: #999;
+      color: #999999;
       font-size: 11px;
     }
 
     .score-box strong {
       color: #00d4ff;
       font-size: 17px;
+    }
+
+    .ai-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(0, 212, 255, 0.18);
+      color: #00d4ff;
+    }
+
+    .formula-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(255, 211, 106, 0.18);
+      color: #ffd36a;
     }
 
     .live-row {
@@ -208,7 +238,7 @@
     .live-position {
       width: 28px;
       height: 28px;
-      background: #333;
+      background: #333333;
       border-radius: 50%;
       display: grid;
       place-items: center;
@@ -220,10 +250,12 @@
       text-align: right;
     }
 
-    .detail-card { border-color: rgba(225, 6, 0, 0.55); }
+    .detail-card {
+      border-color: rgba(225, 6, 0, 0.55);
+    }
 
     .driver-info {
-      color: #ddd;
+      color: #dddddd;
       margin: 12px 0 18px;
       line-height: 1.8;
     }
@@ -244,14 +276,14 @@
 
     .metric span {
       display: block;
-      color: #aaa;
+      color: #aaaaaa;
       font-size: 12px;
       margin-bottom: 6px;
     }
 
     .metric strong {
       font-size: 20px;
-      color: #fff;
+      color: #ffffff;
     }
 
     .bar-row {
@@ -264,7 +296,7 @@
 
     .bar-bg {
       height: 14px;
-      background: #333;
+      background: #333333;
       border-radius: 999px;
       overflow: hidden;
     }
@@ -278,7 +310,7 @@
       background: #101010;
       border-radius: 14px;
       padding: 16px;
-      color: #ddd;
+      color: #dddddd;
     }
 
     .warning {
@@ -288,8 +320,13 @@
     }
 
     @media (max-width: 1000px) {
-      .race-list { grid-template-columns: repeat(2, 1fr); }
-      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .race-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .metrics {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
 
     @media (max-width: 760px) {
@@ -307,7 +344,9 @@
         align-items: flex-start;
       }
 
-      #reloadButton { width: 100%; }
+      #reloadButton {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -318,8 +357,7 @@
       <p class="eyebrow">Formula 1 Grand Prix Predictor</p>
       <h1>🏎️ F1 GP別AI順位予測</h1>
       <p class="subtitle">
-        各GPごとに、Jolpica-F1から取得した実データを使って予測します。
-        前年同GP決勝、前年同GP予選、GP直前ランキングを中心に、取れる場合のみ練習走行ペースも加味します。
+        Jolpica-F1の実データと、あなたのPCで動いているPython機械学習AIを組み合わせて、各GPごとに順位を予測します。
       </p>
     </header>
 
@@ -333,7 +371,9 @@
 
     <section class="card">
       <h2>🏁 GP選択</h2>
-      <p class="hint">予測したいGPを選んでください。スケジュールはAPIから取得します。</p>
+      <p class="hint">
+        予測したいGPを選んでください。スケジュールはJolpica-F1 APIから取得します。
+      </p>
       <div id="raceList" class="race-list"></div>
     </section>
 
@@ -347,7 +387,7 @@
 
       <section class="card">
         <h2>📡 ライブ風トップ10</h2>
-        <p class="hint">予測スコアに微小な揺らぎを加えた観戦風表示です。</p>
+        <p class="hint">AI予測スコアに微小な揺らぎを加えた観戦風表示です。</p>
         <div id="livePanel"></div>
       </section>
     </section>
@@ -367,18 +407,15 @@
     <section class="card">
       <h2>🧠 予測モデル</h2>
       <div class="model-box">
-        <p>GP別AIスコア =</p>
+        <p>このサイトは2段構成です。</p>
         <ul>
-          <li>GP直前ランキング：25%</li>
-          <li>前年同GP決勝：30%</li>
-          <li>前年同GP予選：20%</li>
-          <li>練習走行ペース：10%</li>
-          <li>チーム力：10%</li>
-          <li>安定性：5%</li>
+          <li>Jolpica-F1 API：スケジュール、直前ランキング、前年決勝、前年予選を取得</li>
+          <li>Python AI API：FastAPI + RandomForestで予測順位を計算</li>
         </ul>
       </div>
       <p class="warning">
-        注意：取得できないデータは「未取得」と表示し、予測計算では中立値として扱います。偽の順位データは入れません。
+        AI APIが起動していない場合は、従来のスコア式でフォールバックします。
+        ローカルAIを使う場合は <strong>http://127.0.0.1:8000</strong> のFastAPIサーバーを起動したままにしてください。
       </p>
     </section>
   </main>
@@ -386,6 +423,7 @@
   <script>
     const JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1";
     const OPENF1_BASE = "https://api.openf1.org/v1";
+    const AI_API_BASE = "http://127.0.0.1:8000";
 
     const dataStatus = document.getElementById("dataStatus");
     const reloadButton = document.getElementById("reloadButton");
@@ -418,6 +456,7 @@
 
       try {
         const response = await fetch(url, { signal: controller.signal });
+
         if (!response.ok) {
           throw new Error(response.status + " " + url);
         }
@@ -428,32 +467,6 @@
       } finally {
         clearTimeout(timer);
       }
-    }
-
-    function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function positionToScore(position) {
-      if (!position || !Number.isFinite(position)) return 55;
-      return Math.max(0, 105 - position * 5);
-    }
-
-    function scoreToPosition(score) {
-      return Math.min(20, Math.max(1, Math.round(21 - score / 5)));
-    }
-
-    function formatPosition(value) {
-      return value ? value + "位" : "未取得";
-    }
-
-    function neutralScore() {
-      return 55;
     }
 
     async function init() {
@@ -483,13 +496,17 @@
         renderRaceList();
 
         const today = new Date();
-        const nextRace = races.find(race => new Date(race.date + "T00:00:00") >= today) || races[0];
+        const nextRace =
+          races.find(race => new Date(race.date + "T00:00:00") >= today) ||
+          races[0];
+
         await selectRace(nextRace);
 
       } catch (error) {
         console.error(error);
         setStatus("スケジュール取得に失敗しました。APIまたは通信状態を確認してください。");
-        raceList.innerHTML = "<p class='warning'>スケジュールを取得できませんでした。時間を置いて再読み込みしてください。</p>";
+        raceList.innerHTML =
+          "<p class='warning'>スケジュールを取得できませんでした。時間を置いて再読み込みしてください。</p>";
       }
     }
 
@@ -532,13 +549,19 @@
 
       try {
         selectedPredictions = await predictRace(race);
+
         renderPredictions();
         renderLivePanel();
+
         liveTimer = setInterval(renderLivePanel, 2500);
-        setStatus(race.raceName + " のGP別予測を表示中");
+
+        const aiCount = selectedPredictions.filter(d => d.usedAI).length;
+        setStatus(`${race.raceName} のGP別予測を表示中（AI使用 ${aiCount}名）`);
+
       } catch (error) {
         console.error(error);
-        predictionPanel.innerHTML = "<p class='warning'>予測データの取得に失敗しました。</p>";
+        predictionPanel.innerHTML =
+          "<p class='warning'>予測データの取得に失敗しました。</p>";
         livePanel.innerHTML = "";
         setStatus(race.raceName + " の予測に失敗しました");
       }
@@ -577,51 +600,145 @@
         throw new Error("driver standings empty");
       }
 
-      const teamStrength = calculateTeamStrength(drivers);
+      const teamAverageMap = calculateTeamAverage(drivers);
 
-      const predictions = drivers.map(driver => {
+      const predictionPromises = drivers.map(async driver => {
         const previousRacePosition = previousRaceMap[driver.driverId] || null;
         const previousQualifyingPosition = previousQualifyingMap[driver.driverId] || null;
         const practiceRank = practiceMap[driver.familyName.toLowerCase()] || null;
 
-        const rankingScore = positionToScore(driver.rankBefore);
-        const raceScore = previousRacePosition ? positionToScore(previousRacePosition) : neutralScore();
-        const qualifyingScore = previousQualifyingPosition ? positionToScore(previousQualifyingPosition) : neutralScore();
-        const practiceScore = practiceRank ? positionToScore(practiceRank) : neutralScore();
-        const teamScore = teamStrength[driver.team] || neutralScore();
-
-        const stabilityScore = calculateStability([
-          driver.rankBefore,
+        const browserScorePrediction = formulaPrediction({
+          driver,
           previousRacePosition,
           previousQualifyingPosition,
-          practiceRank
-        ]);
+          practiceRank,
+          teamAverage: teamAverageMap[driver.team]
+        });
 
-        const aiScore =
-          rankingScore * 0.25 +
-          raceScore * 0.30 +
-          qualifyingScore * 0.20 +
-          practiceScore * 0.10 +
-          teamScore * 0.10 +
-          stabilityScore * 0.05;
+        const aiPrediction = await getAIPrediction({
+          driver,
+          previousRacePosition,
+          previousQualifyingPosition,
+          practiceRank,
+          teamAverage: teamAverageMap[driver.team]
+        });
+
+        const usedAI = aiPrediction !== null;
+
+        const predictedPosition = usedAI
+          ? aiPrediction
+          : browserScorePrediction.predictedPosition;
+
+        const aiScore = positionToScore(predictedPosition);
 
         return {
           ...driver,
           previousRacePosition,
           previousQualifyingPosition,
           practiceRank,
-          rankingScore,
-          raceScore,
-          qualifyingScore,
-          practiceScore,
-          teamScore,
-          stabilityScore,
+          teamAverage: teamAverageMap[driver.team],
           aiScore,
-          predictedPosition: scoreToPosition(aiScore)
+          predictedPosition,
+          usedAI,
+          browserScore: browserScorePrediction.aiScore
         };
       });
 
-      return predictions.sort((a, b) => b.aiScore - a.aiScore);
+      const predictions = await Promise.all(predictionPromises);
+
+      return predictions.sort((a, b) => a.predictedPosition - b.predictedPosition);
+    }
+
+    async function getAIPrediction({
+      driver,
+      previousRacePosition,
+      previousQualifyingPosition,
+      practiceRank,
+      teamAverage
+    }) {
+      const grid =
+        previousQualifyingPosition ||
+        practiceRank ||
+        driver.rankBefore ||
+        10;
+
+      const qualifyingPosition =
+        previousQualifyingPosition ||
+        grid ||
+        10;
+
+      const driverRecentAvg = averageNumbers([
+        driver.rankBefore,
+        previousRacePosition,
+        practiceRank
+      ]) || 10;
+
+      const teamRecentAvg =
+        teamAverage || 10;
+
+      const circuitDriverAvg =
+        previousRacePosition ||
+        driverRecentAvg ||
+        10;
+
+      const params = new URLSearchParams({
+        grid: String(clampPosition(grid)),
+        qualifying_position: String(clampPosition(qualifyingPosition)),
+        driver_recent_avg: String(driverRecentAvg),
+        team_recent_avg: String(teamRecentAvg),
+        circuit_driver_avg: String(circuitDriverAvg)
+      });
+
+      try {
+        const data = await fetchJson(
+          AI_API_BASE + "/predict?" + params.toString(),
+          4000
+        );
+
+        if (typeof data.predicted_position !== "number") {
+          return null;
+        }
+
+        return clampPrediction(data.predicted_position);
+
+      } catch (error) {
+        console.warn("AI API unavailable. Falling back to formula.", error);
+        return null;
+      }
+    }
+
+    function formulaPrediction({
+      driver,
+      previousRacePosition,
+      previousQualifyingPosition,
+      practiceRank,
+      teamAverage
+    }) {
+      const rankingScore = positionToScore(driver.rankBefore);
+      const raceScore = previousRacePosition ? positionToScore(previousRacePosition) : neutralScore();
+      const qualifyingScore = previousQualifyingPosition ? positionToScore(previousQualifyingPosition) : neutralScore();
+      const practiceScore = practiceRank ? positionToScore(practiceRank) : neutralScore();
+      const teamScore = teamAverage ? positionToScore(teamAverage) : neutralScore();
+
+      const stabilityScore = calculateStability([
+        driver.rankBefore,
+        previousRacePosition,
+        previousQualifyingPosition,
+        practiceRank
+      ]);
+
+      const aiScore =
+        rankingScore * 0.25 +
+        raceScore * 0.30 +
+        qualifyingScore * 0.20 +
+        practiceScore * 0.10 +
+        teamScore * 0.10 +
+        stabilityScore * 0.05;
+
+      return {
+        aiScore,
+        predictedPosition: scoreToPosition(aiScore)
+      };
     }
 
     async function getStandingsBeforeRace(race) {
@@ -640,7 +757,10 @@
     async function getPreviousRaceResults(previousSeason, circuitId) {
       if (!circuitId) return {};
 
-      const data = await fetchJson(`${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/results.json`);
+      const data = await fetchJson(
+        `${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/results.json`
+      );
+
       const results = data?.MRData?.RaceTable?.Races?.[0]?.Results || [];
       const map = {};
 
@@ -654,7 +774,10 @@
     async function getPreviousQualifyingResults(previousSeason, circuitId) {
       if (!circuitId) return {};
 
-      const data = await fetchJson(`${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/qualifying.json`);
+      const data = await fetchJson(
+        `${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/qualifying.json`
+      );
+
       const results = data?.MRData?.RaceTable?.Races?.[0]?.QualifyingResults || [];
       const map = {};
 
@@ -689,7 +812,11 @@
 
         if (!meeting) return {};
 
-        const sessions = await fetchJson(`${OPENF1_BASE}/sessions?meeting_key=${meeting.meeting_key}`, 5000);
+        const sessions = await fetchJson(
+          `${OPENF1_BASE}/sessions?meeting_key=${meeting.meeting_key}`,
+          5000
+        );
+
         const practiceSessions = sessions
           .filter(session => String(session.session_name || "").toLowerCase().includes("practice"))
           .sort((a, b) => new Date(b.date_start) - new Date(a.date_start));
@@ -704,8 +831,10 @@
         ]);
 
         const numberToLastName = {};
+
         openDrivers.forEach(driver => {
-          numberToLastName[driver.driver_number] = String(driver.last_name || "").toLowerCase();
+          numberToLastName[driver.driver_number] =
+            String(driver.last_name || "").toLowerCase();
         });
 
         const bestLapByDriver = {};
@@ -731,6 +860,7 @@
         });
 
         return rankMap;
+
       } catch (error) {
         console.warn("Practice data unavailable", error);
         return {};
@@ -755,7 +885,7 @@
       });
     }
 
-    function calculateTeamStrength(drivers) {
+    function calculateTeamAverage(drivers) {
       const teams = {};
 
       drivers.forEach(driver => {
@@ -769,8 +899,7 @@
       const result = {};
 
       Object.keys(teams).forEach(team => {
-        const avg = teams[team].reduce((sum, pos) => sum + pos, 0) / teams[team].length;
-        result[team] = positionToScore(avg);
+        result[team] = averageNumbers(teams[team]);
       });
 
       return result;
@@ -781,10 +910,53 @@
 
       if (clean.length === 0) return neutralScore();
 
-      const avg = clean.reduce((sum, value) => sum + value, 0) / clean.length;
-      const variance = clean.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / clean.length;
+      const avg = averageNumbers(clean);
+      const variance =
+        clean.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / clean.length;
 
       return Math.max(0, positionToScore(avg) - Math.sqrt(variance) * 4);
+    }
+
+    function averageNumbers(values) {
+      const clean = values.filter(value => value && Number.isFinite(value));
+
+      if (clean.length === 0) return null;
+
+      return clean.reduce((sum, value) => sum + value, 0) / clean.length;
+    }
+
+    function positionToScore(position) {
+      if (!position || !Number.isFinite(position)) return 55;
+      return Math.max(0, 105 - position * 5);
+    }
+
+    function scoreToPosition(score) {
+      return Math.min(20, Math.max(1, Math.round(21 - score / 5)));
+    }
+
+    function neutralScore() {
+      return 55;
+    }
+
+    function clampPosition(value) {
+      return Math.min(20, Math.max(1, Math.round(Number(value) || 10)));
+    }
+
+    function clampPrediction(value) {
+      return Math.min(20, Math.max(1, Number(value)));
+    }
+
+    function formatPosition(value) {
+      return value ? Number(value).toFixed(1).replace(".0", "") + "位" : "未取得";
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function renderPredictions() {
@@ -794,15 +966,20 @@
         const row = document.createElement("button");
         row.className = "prediction-row";
 
+        const methodBadge = driver.usedAI
+          ? "<span class='ai-badge'>ML AI</span>"
+          : "<span class='formula-badge'>FORMULA</span>";
+
         row.innerHTML = `
           <span class="rank-badge">${index + 1}</span>
           <span class="prediction-main">
             <strong>${escapeHtml(driver.code)} ${escapeHtml(driver.familyName)}</strong>
             <small>${escapeHtml(driver.team)}</small>
+            ${methodBadge}
           </span>
           <span class="score-box">
-            <small>AI</small>
-            <strong>${driver.aiScore.toFixed(1)}</strong>
+            <small>予測</small>
+            <strong>${driver.predictedPosition.toFixed(2)}</strong>
           </span>
         `;
 
@@ -839,17 +1016,27 @@
     function showDriverDetail(driver) {
       detailCard.style.display = "block";
 
-      driverTitle.textContent = `📊 ${selectedRace.raceName}：${driver.familyName} の予測分析`;
+      driverTitle.textContent =
+        `📊 ${selectedRace.raceName}：${driver.familyName} の予測分析`;
 
       driverInfo.innerHTML = `
-        <p><strong>${escapeHtml(driver.givenName)} ${escapeHtml(driver.familyName)}</strong> / ${escapeHtml(driver.team)}</p>
-        <p>GP：${escapeHtml(selectedRace.raceName)} / サーキット：${escapeHtml(selectedRace.circuitName)}</p>
+        <p>
+          <strong>${escapeHtml(driver.givenName)} ${escapeHtml(driver.familyName)}</strong>
+          / ${escapeHtml(driver.team)}
+        </p>
+        <p>
+          GP：${escapeHtml(selectedRace.raceName)}
+          / サーキット：${escapeHtml(selectedRace.circuitName)}
+        </p>
+        <p>
+          使用モデル：${driver.usedAI ? "Python機械学習AI" : "ブラウザ内フォーミュラ"}
+        </p>
       `;
 
       driverMetrics.innerHTML = `
         <div class="metric">
           <span>予測順位</span>
-          <strong>${driver.predictedPosition}位</strong>
+          <strong>${driver.predictedPosition.toFixed(2)}位</strong>
         </div>
         <div class="metric">
           <span>AIスコア</span>
@@ -890,7 +1077,7 @@
       simpleChart.innerHTML = "";
 
       items.forEach(item => {
-        const displayValue = item.value ? item.value : 20;
+        const displayValue = item.value ? Number(item.value) : 20;
         const width = Math.max(5, 100 - displayValue * 4);
 
         const row = document.createElement("div");
@@ -910,6 +1097,7 @@
 
     reloadButton.addEventListener("click", () => {
       cache.clear();
+
       if (selectedRace) {
         selectRace(selectedRace);
       } else {
