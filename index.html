@@ -206,22 +206,22 @@
       font-size: 17px;
     }
 
-    .ai-badge {
-      display: inline-block;
-      margin-top: 4px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: rgba(0, 212, 255, 0.18);
-      color: #00d4ff;
-    }
-
+    .ai-badge,
     .formula-badge {
       display: inline-block;
       margin-top: 4px;
       padding: 2px 6px;
       border-radius: 999px;
       font-size: 11px;
+      width: fit-content;
+    }
+
+    .ai-badge {
+      background: rgba(0, 212, 255, 0.18);
+      color: #00d4ff;
+    }
+
+    .formula-badge {
       background: rgba(255, 211, 106, 0.18);
       color: #ffd36a;
     }
@@ -319,6 +319,54 @@
       line-height: 1.7;
     }
 
+    .confidence-high {
+      color: #00ff9d;
+    }
+
+    .confidence-medium {
+      color: #ffd36a;
+    }
+
+    .confidence-low {
+      color: #ff7676;
+    }
+
+    .reason-box {
+      background: #101010;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 16px;
+      color: #dddddd;
+      line-height: 1.8;
+    }
+
+    .reason-box ul {
+      margin-bottom: 0;
+    }
+
+    .data-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+      margin-bottom: 16px;
+    }
+
+    .data-item {
+      background: #202020;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .data-ok {
+      color: #00ff9d;
+    }
+
+    .data-missing {
+      color: #ff7676;
+    }
+
     @media (max-width: 1000px) {
       .race-list {
         grid-template-columns: repeat(2, 1fr);
@@ -331,7 +379,8 @@
 
     @media (max-width: 760px) {
       .grid,
-      .race-list {
+      .race-list,
+      .data-list {
         grid-template-columns: 1fr;
       }
 
@@ -357,7 +406,7 @@
       <p class="eyebrow">Formula 1 Grand Prix Predictor</p>
       <h1>🏎️ F1 GP別AI順位予測</h1>
       <p class="subtitle">
-        Jolpica-F1の実データと、あなたのPCで動いているPython機械学習AIを組み合わせて、各GPごとに順位を予測します。
+        Jolpica-F1の実データと、ローカルで動作するPython機械学習AIを組み合わせて、GPごとの順位を予測します。
       </p>
     </header>
 
@@ -387,7 +436,9 @@
 
       <section class="card">
         <h2>📡 ライブ風トップ10</h2>
-        <p class="hint">AI予測スコアに微小な揺らぎを加えた観戦風表示です。</p>
+        <p class="hint">
+          AI予測スコアに微小な揺らぎを加えた観戦風表示です。
+        </p>
         <div id="livePanel"></div>
       </section>
     </section>
@@ -411,11 +462,11 @@
         <ul>
           <li>Jolpica-F1 API：スケジュール、直前ランキング、前年決勝、前年予選を取得</li>
           <li>Python AI API：FastAPI + RandomForestで予測順位を計算</li>
+          <li>AI APIが使えない場合：ブラウザ内フォーミュラで自動フォールバック</li>
         </ul>
       </div>
       <p class="warning">
-        AI APIが起動していない場合は、従来のスコア式でフォールバックします。
-        ローカルAIを使う場合は <strong>http://127.0.0.1:8000</strong> のFastAPIサーバーを起動したままにしてください。
+        AIを使うには、FastAPIサーバー <strong>http://127.0.0.1:8000</strong> を起動したままにしてください。
       </p>
     </section>
   </main>
@@ -555,7 +606,7 @@
 
         liveTimer = setInterval(renderLivePanel, 2500);
 
-        const aiCount = selectedPredictions.filter(d => d.usedAI).length;
+        const aiCount = selectedPredictions.filter(driver => driver.usedAI).length;
         setStatus(`${race.raceName} のGP別予測を表示中（AI使用 ${aiCount}名）`);
 
       } catch (error) {
@@ -673,8 +724,7 @@
         practiceRank
       ]) || 10;
 
-      const teamRecentAvg =
-        teamAverage || 10;
+      const teamRecentAvg = teamAverage || 10;
 
       const circuitDriverAvg =
         previousRacePosition ||
@@ -905,6 +955,100 @@
       return result;
     }
 
+    function getPredictionConfidence(driver) {
+      let score = 0;
+
+      if (driver.rankBefore) score += 25;
+      if (driver.previousRacePosition) score += 25;
+      if (driver.previousQualifyingPosition) score += 20;
+      if (driver.practiceRank) score += 10;
+      if (driver.teamAverage) score += 10;
+      if (driver.usedAI) score += 10;
+
+      if (score >= 75) {
+        return {
+          label: "高",
+          className: "confidence-high",
+          score
+        };
+      }
+
+      if (score >= 45) {
+        return {
+          label: "中",
+          className: "confidence-medium",
+          score
+        };
+      }
+
+      return {
+        label: "低",
+        className: "confidence-low",
+        score
+      };
+    }
+
+    function buildDataAvailability(driver) {
+      return [
+        {
+          label: "GP直前ランキング",
+          available: !!driver.rankBefore
+        },
+        {
+          label: "前年同GP決勝",
+          available: !!driver.previousRacePosition
+        },
+        {
+          label: "前年同GP予選",
+          available: !!driver.previousQualifyingPosition
+        },
+        {
+          label: "練習走行ペース",
+          available: !!driver.practiceRank
+        },
+        {
+          label: "チーム力",
+          available: !!driver.teamAverage
+        },
+        {
+          label: "Python機械学習AI",
+          available: !!driver.usedAI
+        }
+      ];
+    }
+
+    function buildPredictionReasons(driver) {
+      const reasons = [];
+
+      if (driver.usedAI) {
+        reasons.push("Python機械学習AIによる予測結果を使用しています。");
+      } else {
+        reasons.push("AI APIに接続できなかったため、ブラウザ内フォーミュラで予測しています。");
+      }
+
+      if (driver.rankBefore && driver.rankBefore <= 5) {
+        reasons.push("GP直前ランキングが上位のため、現在の勢力図では高評価です。");
+      }
+
+      if (driver.previousRacePosition && driver.previousRacePosition <= 5) {
+        reasons.push("前年同GPの決勝結果が上位のため、このサーキットとの相性が良い可能性があります。");
+      }
+
+      if (driver.previousQualifyingPosition && driver.previousQualifyingPosition <= 5) {
+        reasons.push("前年同GPの予選順位が上位のため、一発の速さが評価されています。");
+      }
+
+      if (driver.practiceRank && driver.practiceRank <= 5) {
+        reasons.push("練習走行ペースが上位のため、週末の仕上がりが良い可能性があります。");
+      }
+
+      if (!driver.previousRacePosition && !driver.previousQualifyingPosition) {
+        reasons.push("前年同GPの決勝・予選データが不足しているため、予測信頼度はやや下がります。");
+      }
+
+      return reasons;
+    }
+
     function calculateStability(values) {
       const clean = values.filter(value => value && Number.isFinite(value));
 
@@ -1016,6 +1160,10 @@
     function showDriverDetail(driver) {
       detailCard.style.display = "block";
 
+      const confidence = getPredictionConfidence(driver);
+      const dataAvailability = buildDataAvailability(driver);
+      const reasons = buildPredictionReasons(driver);
+
       driverTitle.textContent =
         `📊 ${selectedRace.raceName}：${driver.familyName} の予測分析`;
 
@@ -1029,7 +1177,13 @@
           / サーキット：${escapeHtml(selectedRace.circuitName)}
         </p>
         <p>
-          使用モデル：${driver.usedAI ? "Python機械学習AI" : "ブラウザ内フォーミュラ"}
+          使用モデル：
+          <strong>${driver.usedAI ? "Python機械学習AI" : "ブラウザ内フォーミュラ"}</strong>
+        </p>
+        <p>
+          予測信頼度：
+          <strong class="${confidence.className}">${confidence.label}</strong>
+          <span class="hint">（信頼度スコア ${confidence.score}/100）</span>
         </p>
       `;
 
@@ -1061,6 +1215,39 @@
       `;
 
       renderSimpleChart(driver);
+
+      const oldReasonBox = detailCard.querySelector(".reason-box");
+      if (oldReasonBox) {
+        oldReasonBox.remove();
+      }
+
+      const dataHtml = dataAvailability.map(item => `
+        <div class="data-item">
+          ${item.available
+            ? `<span class="data-ok">✅</span> ${escapeHtml(item.label)}：取得済み`
+            : `<span class="data-missing">❌</span> ${escapeHtml(item.label)}：未取得`
+          }
+        </div>
+      `).join("");
+
+      const reasonsHtml = reasons.map(reason => `
+        <li>${escapeHtml(reason)}</li>
+      `).join("");
+
+      const extraBox = document.createElement("div");
+      extraBox.className = "reason-box";
+      extraBox.innerHTML = `
+        <h3>🧠 予測根拠</h3>
+        <div class="data-list">
+          ${dataHtml}
+        </div>
+        <h4>理由</h4>
+        <ul>
+          ${reasonsHtml}
+        </ul>
+      `;
+
+      detailCard.appendChild(extraBox);
 
       detailCard.scrollIntoView({ behavior: "smooth" });
     }
