@@ -3,34 +3,921 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>F1 AI予測サイト</title>
+  <title>F1 GP別AI順位予測</title>
 
-  <link rel="stylesheet" href="./style.css" />
+  <style>
+    * { box-sizing: border-box; }
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(225, 6, 0, 0.34), transparent 30%),
+        radial-gradient(circle at top right, rgba(0, 212, 255, 0.18), transparent 28%),
+        #070707;
+      color: #fff;
+      font-family: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 64px;
+    }
+
+    .hero { padding: 30px 0 24px; }
+
+    .eyebrow {
+      color: #ff4b45;
+      font-size: 13px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: 1.05;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #cccccc;
+      max-width: 880px;
+      line-height: 1.8;
+    }
+
+    .card, .status-card {
+      background: rgba(18, 18, 18, 0.94);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+    }
+
+    .status-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .small-label {
+      color: #999;
+      font-size: 12px;
+      margin: 0 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    #dataStatus {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .hint {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-top: 0;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #reloadButton {
+      background: #e10600;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 999px;
+      font-weight: bold;
+    }
+
+    #reloadButton:hover { background: #ff2d26; }
+
+    .race-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .race-button {
+      text-align: left;
+      background: #151515;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .race-button:hover,
+    .race-button.selected {
+      border-color: #e10600;
+      background: rgba(225, 6, 0, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .race-round {
+      color: #00d4ff;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .race-button span,
+    .race-button small {
+      color: #aaa;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 20px;
+    }
+
+    .prediction-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 44px 1fr 88px;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      color: white;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+    }
+
+    .prediction-row:hover {
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding-left: 8px;
+    }
+
+    .rank-badge {
+      width: 34px;
+      height: 34px;
+      background: #e10600;
+      color: #fff;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+    }
+
+    .prediction-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .prediction-main small { color: #aaa; }
+
+    .score-box {
+      background: #242424;
+      border-radius: 10px;
+      padding: 7px 8px;
+      text-align: center;
+    }
+
+    .score-box small {
+      display: block;
+      color: #999;
+      font-size: 11px;
+    }
+
+    .score-box strong {
+      color: #00d4ff;
+      font-size: 17px;
+    }
+
+    .live-row {
+      display: grid;
+      grid-template-columns: 32px 48px 1fr 58px;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .live-position {
+      width: 28px;
+      height: 28px;
+      background: #333;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+    }
+
+    .live-row small {
+      color: #00d4ff;
+      text-align: right;
+    }
+
+    .detail-card { border-color: rgba(225, 6, 0, 0.55); }
+
+    .driver-info {
+      color: #ddd;
+      margin: 12px 0 18px;
+      line-height: 1.8;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      background: #202020;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .metric span {
+      display: block;
+      color: #aaa;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      font-size: 20px;
+      color: #fff;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 80px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .bar-bg {
+      height: 14px;
+      background: #333;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e10600, #00d4ff);
+    }
+
+    .model-box {
+      background: #101010;
+      border-radius: 14px;
+      padding: 16px;
+      color: #ddd;
+    }
+
+    .warning {
+      color: #ffd36a;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1000px) {
+      .race-list { grid-template-columns: repeat(2, 1fr); }
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 760px) {
+      .grid,
+      .race-list {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .status-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      #reloadButton { width: 100%; }
+    }
+  </style>
 </head>
 
 <body>
   <main class="container">
-    <h1>🏎️ F1 AI予測サイト</h1>
+    <header class="hero">
+      <p class="eyebrow">Formula 1 Grand Prix Predictor</p>
+      <h1>🏎️ F1 GP別AI順位予測</h1>
+      <p class="subtitle">
+        各GPごとに、Jolpica-F1から取得した実データを使って予測します。
+        前年同GP決勝、前年同GP予選、GP直前ランキングを中心に、取れる場合のみ練習走行ペースも加味します。
+      </p>
+    </header>
 
-    <section class="card">
-      <h2>🔮 次レース予測</h2>
-      <div id="predictions">読み込み中...</div>
+    <section class="status-card">
+      <div>
+        <p class="small-label">データ状態</p>
+        <h2 id="dataStatus">起動中...</h2>
+      </div>
+      <button id="reloadButton">データ再取得</button>
     </section>
 
     <section class="card">
-      <h2>👤 ドライバー一覧</h2>
-      <div id="drivers">読み込み中...</div>
+      <h2>🏁 GP選択</h2>
+      <p class="hint">予測したいGPを選んでください。スケジュールはAPIから取得します。</p>
+      <div id="raceList" class="race-list"></div>
     </section>
 
-    <section class="card" id="detailCard" style="display: none;">
-      <h2 id="driverTitle">📊 ドライバー分析</h2>
-      <p id="driverInfo"></p>
-      <canvas id="driverChart"></canvas>
+    <section class="grid">
+      <section class="card">
+        <p class="small-label">Selected Grand Prix</p>
+        <h2 id="raceTitle">GPを選択してください</h2>
+        <p id="raceMeta" class="hint"></p>
+        <div id="predictionPanel"></div>
+      </section>
+
+      <section class="card">
+        <h2>📡 ライブ風トップ10</h2>
+        <p class="hint">予測スコアに微小な揺らぎを加えた観戦風表示です。</p>
+        <div id="livePanel"></div>
+      </section>
+    </section>
+
+    <section class="card detail-card" id="detailCard" style="display: none;">
+      <p class="small-label">Driver Detail</p>
+      <h2 id="driverTitle">ドライバー詳細</h2>
+      <div id="driverInfo" class="driver-info"></div>
+      <div id="driverMetrics" class="metrics"></div>
+
+      <div class="card" style="background:#101010;">
+        <h3>📊 予測要素</h3>
+        <div id="simpleChart"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🧠 予測モデル</h2>
+      <div class="model-box">
+        <p>GP別AIスコア =</p>
+        <ul>
+          <li>GP直前ランキング：25%</li>
+          <li>前年同GP決勝：30%</li>
+          <li>前年同GP予選：20%</li>
+          <li>練習走行ペース：10%</li>
+          <li>チーム力：10%</li>
+          <li>安定性：5%</li>
+        </ul>
+      </div>
+      <p class="warning">
+        注意：取得できないデータは「未取得」と表示し、予測計算では中立値として扱います。偽の順位データは入れません。
+      </p>
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <script>
+    const JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1";
+    const OPENF1_BASE = "https://api.openf1.org/v1";
+
+    const dataStatus = document.getElementById("dataStatus");
+    const reloadButton = document.getElementById("reloadButton");
+    const raceList = document.getElementById("raceList");
+    const raceTitle = document.getElementById("raceTitle");
+    const raceMeta = document.getElementById("raceMeta");
+    const predictionPanel = document.getElementById("predictionPanel");
+    const livePanel = document.getElementById("livePanel");
+    const detailCard = document.getElementById("detailCard");
+    const driverTitle = document.getElementById("driverTitle");
+    const driverInfo = document.getElementById("driverInfo");
+    const driverMetrics = document.getElementById("driverMetrics");
+    const simpleChart = document.getElementById("simpleChart");
+
+    let races = [];
+    let selectedRace = null;
+    let selectedPredictions = [];
+    let liveTimer = null;
+    const cache = new Map();
+
+    function setStatus(text) {
+      dataStatus.textContent = text;
+    }
+
+    async function fetchJson(url, timeoutMs = 8000) {
+      if (cache.has(url)) return cache.get(url);
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(response.status + " " + url);
+        }
+
+        const data = await response.json();
+        cache.set(url, data);
+        return data;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function positionToScore(position) {
+      if (!position || !Number.isFinite(position)) return 55;
+      return Math.max(0, 105 - position * 5);
+    }
+
+    function scoreToPosition(score) {
+      return Math.min(20, Math.max(1, Math.round(21 - score / 5)));
+    }
+
+    function formatPosition(value) {
+      return value ? value + "位" : "未取得";
+    }
+
+    function neutralScore() {
+      return 55;
+    }
+
+    async function init() {
+      setStatus("実スケジュール取得中...");
+      raceList.textContent = "スケジュール取得中...";
+
+      try {
+        const scheduleData = await fetchJson(JOLPICA_BASE + "/current.json");
+        const raceTable = scheduleData?.MRData?.RaceTable;
+        const season = Number(raceTable?.season || new Date().getFullYear());
+
+        races = (raceTable?.Races || []).map(race => ({
+          season,
+          round: Number(race.round),
+          raceName: race.raceName,
+          date: race.date,
+          time: race.time || "",
+          circuitId: race.Circuit?.circuitId,
+          circuitName: race.Circuit?.circuitName,
+          country: race.Circuit?.Location?.country,
+          locality: race.Circuit?.Location?.locality
+        }));
+
+        if (races.length === 0) throw new Error("schedule empty");
+
+        setStatus(season + "年シーズンスケジュール取得成功");
+        renderRaceList();
+
+        const today = new Date();
+        const nextRace = races.find(race => new Date(race.date + "T00:00:00") >= today) || races[0];
+        await selectRace(nextRace);
+
+      } catch (error) {
+        console.error(error);
+        setStatus("スケジュール取得に失敗しました。APIまたは通信状態を確認してください。");
+        raceList.innerHTML = "<p class='warning'>スケジュールを取得できませんでした。時間を置いて再読み込みしてください。</p>";
+      }
+    }
+
+    function renderRaceList() {
+      raceList.innerHTML = "";
+
+      races.forEach(race => {
+        const button = document.createElement("button");
+        button.className = "race-button";
+
+        if (selectedRace && selectedRace.round === race.round) {
+          button.classList.add("selected");
+        }
+
+        button.innerHTML = `
+          <span class="race-round">Round ${race.round}</span>
+          <strong>${escapeHtml(race.raceName)}</strong>
+          <span>${escapeHtml(race.circuitName)}</span>
+          <small>${escapeHtml(race.date)} / ${escapeHtml(race.country)}</small>
+        `;
+
+        button.addEventListener("click", () => selectRace(race));
+        raceList.appendChild(button);
+      });
+    }
+
+    async function selectRace(race) {
+      selectedRace = race;
+      detailCard.style.display = "none";
+      clearInterval(liveTimer);
+
+      renderRaceList();
+
+      raceTitle.textContent = "🏁 " + race.raceName;
+      raceMeta.textContent = `${race.date} / ${race.circuitName} / ${race.locality}, ${race.country}`;
+      predictionPanel.textContent = "予測データ取得中...";
+      livePanel.textContent = "準備中...";
+
+      setStatus(race.raceName + " のデータ取得中...");
+
+      try {
+        selectedPredictions = await predictRace(race);
+        renderPredictions();
+        renderLivePanel();
+        liveTimer = setInterval(renderLivePanel, 2500);
+        setStatus(race.raceName + " のGP別予測を表示中");
+      } catch (error) {
+        console.error(error);
+        predictionPanel.innerHTML = "<p class='warning'>予測データの取得に失敗しました。</p>";
+        livePanel.innerHTML = "";
+        setStatus(race.raceName + " の予測に失敗しました");
+      }
+    }
+
+    async function predictRace(race) {
+      const previousSeason = race.season - 1;
+
+      const [
+        standingsResult,
+        previousRaceResult,
+        previousQualifyingResult,
+        practiceResult
+      ] = await Promise.allSettled([
+        getStandingsBeforeRace(race),
+        getPreviousRaceResults(previousSeason, race.circuitId),
+        getPreviousQualifyingResults(previousSeason, race.circuitId),
+        getPracticePace(race)
+      ]);
+
+      const standings =
+        standingsResult.status === "fulfilled" ? standingsResult.value : [];
+
+      const previousRaceMap =
+        previousRaceResult.status === "fulfilled" ? previousRaceResult.value : {};
+
+      const previousQualifyingMap =
+        previousQualifyingResult.status === "fulfilled" ? previousQualifyingResult.value : {};
+
+      const practiceMap =
+        practiceResult.status === "fulfilled" ? practiceResult.value : {};
+
+      const drivers = buildDriversFromStandings(standings);
+
+      if (drivers.length === 0) {
+        throw new Error("driver standings empty");
+      }
+
+      const teamStrength = calculateTeamStrength(drivers);
+
+      const predictions = drivers.map(driver => {
+        const previousRacePosition = previousRaceMap[driver.driverId] || null;
+        const previousQualifyingPosition = previousQualifyingMap[driver.driverId] || null;
+        const practiceRank = practiceMap[driver.familyName.toLowerCase()] || null;
+
+        const rankingScore = positionToScore(driver.rankBefore);
+        const raceScore = previousRacePosition ? positionToScore(previousRacePosition) : neutralScore();
+        const qualifyingScore = previousQualifyingPosition ? positionToScore(previousQualifyingPosition) : neutralScore();
+        const practiceScore = practiceRank ? positionToScore(practiceRank) : neutralScore();
+        const teamScore = teamStrength[driver.team] || neutralScore();
+
+        const stabilityScore = calculateStability([
+          driver.rankBefore,
+          previousRacePosition,
+          previousQualifyingPosition,
+          practiceRank
+        ]);
+
+        const aiScore =
+          rankingScore * 0.25 +
+          raceScore * 0.30 +
+          qualifyingScore * 0.20 +
+          practiceScore * 0.10 +
+          teamScore * 0.10 +
+          stabilityScore * 0.05;
+
+        return {
+          ...driver,
+          previousRacePosition,
+          previousQualifyingPosition,
+          practiceRank,
+          rankingScore,
+          raceScore,
+          qualifyingScore,
+          practiceScore,
+          teamScore,
+          stabilityScore,
+          aiScore,
+          predictedPosition: scoreToPosition(aiScore)
+        };
+      });
+
+      return predictions.sort((a, b) => b.aiScore - a.aiScore);
+    }
+
+    async function getStandingsBeforeRace(race) {
+      let url;
+
+      if (race.round > 1) {
+        url = `${JOLPICA_BASE}/${race.season}/${race.round - 1}/driverstandings.json`;
+      } else {
+        url = `${JOLPICA_BASE}/${race.season - 1}/last/driverstandings.json`;
+      }
+
+      const data = await fetchJson(url);
+      return data?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings || [];
+    }
+
+    async function getPreviousRaceResults(previousSeason, circuitId) {
+      if (!circuitId) return {};
+
+      const data = await fetchJson(`${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/results.json`);
+      const results = data?.MRData?.RaceTable?.Races?.[0]?.Results || [];
+      const map = {};
+
+      results.forEach(result => {
+        map[result.Driver.driverId] = Number(result.position);
+      });
+
+      return map;
+    }
+
+    async function getPreviousQualifyingResults(previousSeason, circuitId) {
+      if (!circuitId) return {};
+
+      const data = await fetchJson(`${JOLPICA_BASE}/${previousSeason}/circuits/${circuitId}/qualifying.json`);
+      const results = data?.MRData?.RaceTable?.Races?.[0]?.QualifyingResults || [];
+      const map = {};
+
+      results.forEach(result => {
+        map[result.Driver.driverId] = Number(result.position);
+      });
+
+      return map;
+    }
+
+    async function getPracticePace(race) {
+      try {
+        const meetings = await fetchJson(`${OPENF1_BASE}/meetings?year=${race.season}`, 5000);
+
+        const meeting = meetings.find(item => {
+          const country = String(item.country_name || "").toLowerCase();
+          const location = String(item.location || "").toLowerCase();
+          const meetingName = String(item.meeting_name || "").toLowerCase();
+
+          const raceCountry = String(race.country || "").toLowerCase();
+          const raceLocality = String(race.locality || "").toLowerCase();
+          const raceName = String(race.raceName || "").toLowerCase();
+
+          return (
+            country.includes(raceCountry) ||
+            raceCountry.includes(country) ||
+            location.includes(raceLocality) ||
+            raceName.includes(location) ||
+            meetingName.includes(raceName.replace("grand prix", "").trim())
+          );
+        });
+
+        if (!meeting) return {};
+
+        const sessions = await fetchJson(`${OPENF1_BASE}/sessions?meeting_key=${meeting.meeting_key}`, 5000);
+        const practiceSessions = sessions
+          .filter(session => String(session.session_name || "").toLowerCase().includes("practice"))
+          .sort((a, b) => new Date(b.date_start) - new Date(a.date_start));
+
+        if (practiceSessions.length === 0) return {};
+
+        const latestPractice = practiceSessions[0];
+
+        const [laps, openDrivers] = await Promise.all([
+          fetchJson(`${OPENF1_BASE}/laps?session_key=${latestPractice.session_key}`, 5000),
+          fetchJson(`${OPENF1_BASE}/drivers?session_key=${latestPractice.session_key}`, 5000)
+        ]);
+
+        const numberToLastName = {};
+        openDrivers.forEach(driver => {
+          numberToLastName[driver.driver_number] = String(driver.last_name || "").toLowerCase();
+        });
+
+        const bestLapByDriver = {};
+
+        laps.forEach(lap => {
+          if (!lap.driver_number || !lap.lap_duration) return;
+
+          const lastName = numberToLastName[lap.driver_number];
+          const duration = Number(lap.lap_duration);
+
+          if (!lastName || !Number.isFinite(duration)) return;
+
+          if (!bestLapByDriver[lastName] || duration < bestLapByDriver[lastName]) {
+            bestLapByDriver[lastName] = duration;
+          }
+        });
+
+        const ranked = Object.entries(bestLapByDriver).sort((a, b) => a[1] - b[1]);
+        const rankMap = {};
+
+        ranked.forEach(([lastName], index) => {
+          rankMap[lastName] = index + 1;
+        });
+
+        return rankMap;
+      } catch (error) {
+        console.warn("Practice data unavailable", error);
+        return {};
+      }
+    }
+
+    function buildDriversFromStandings(standings) {
+      return standings.map(item => {
+        const driver = item.Driver;
+        const constructor = item.Constructors?.[0];
+
+        return {
+          driverId: driver.driverId,
+          code: driver.code || String(driver.familyName || "").slice(0, 3).toUpperCase(),
+          givenName: driver.givenName,
+          familyName: driver.familyName,
+          team: constructor?.name || "Unknown",
+          rankBefore: Number(item.position),
+          points: Number(item.points || 0),
+          wins: Number(item.wins || 0)
+        };
+      });
+    }
+
+    function calculateTeamStrength(drivers) {
+      const teams = {};
+
+      drivers.forEach(driver => {
+        if (!teams[driver.team]) {
+          teams[driver.team] = [];
+        }
+
+        teams[driver.team].push(driver.rankBefore);
+      });
+
+      const result = {};
+
+      Object.keys(teams).forEach(team => {
+        const avg = teams[team].reduce((sum, pos) => sum + pos, 0) / teams[team].length;
+        result[team] = positionToScore(avg);
+      });
+
+      return result;
+    }
+
+    function calculateStability(values) {
+      const clean = values.filter(value => value && Number.isFinite(value));
+
+      if (clean.length === 0) return neutralScore();
+
+      const avg = clean.reduce((sum, value) => sum + value, 0) / clean.length;
+      const variance = clean.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / clean.length;
+
+      return Math.max(0, positionToScore(avg) - Math.sqrt(variance) * 4);
+    }
+
+    function renderPredictions() {
+      predictionPanel.innerHTML = "";
+
+      selectedPredictions.forEach((driver, index) => {
+        const row = document.createElement("button");
+        row.className = "prediction-row";
+
+        row.innerHTML = `
+          <span class="rank-badge">${index + 1}</span>
+          <span class="prediction-main">
+            <strong>${escapeHtml(driver.code)} ${escapeHtml(driver.familyName)}</strong>
+            <small>${escapeHtml(driver.team)}</small>
+          </span>
+          <span class="score-box">
+            <small>AI</small>
+            <strong>${driver.aiScore.toFixed(1)}</strong>
+          </span>
+        `;
+
+        row.addEventListener("click", () => showDriverDetail(driver));
+        predictionPanel.appendChild(row);
+      });
+    }
+
+    function renderLivePanel() {
+      livePanel.innerHTML = "";
+
+      selectedPredictions
+        .map(driver => ({
+          ...driver,
+          liveScore: driver.aiScore + Math.random() * 4 - 2
+        }))
+        .sort((a, b) => b.liveScore - a.liveScore)
+        .slice(0, 10)
+        .forEach((driver, index) => {
+          const row = document.createElement("div");
+          row.className = "live-row";
+
+          row.innerHTML = `
+            <span class="live-position">${index + 1}</span>
+            <strong>${escapeHtml(driver.code)}</strong>
+            <span>${escapeHtml(driver.familyName)}</span>
+            <small>${driver.liveScore.toFixed(1)}</small>
+          `;
+
+          livePanel.appendChild(row);
+        });
+    }
+
+    function showDriverDetail(driver) {
+      detailCard.style.display = "block";
+
+      driverTitle.textContent = `📊 ${selectedRace.raceName}：${driver.familyName} の予測分析`;
+
+      driverInfo.innerHTML = `
+        <p><strong>${escapeHtml(driver.givenName)} ${escapeHtml(driver.familyName)}</strong> / ${escapeHtml(driver.team)}</p>
+        <p>GP：${escapeHtml(selectedRace.raceName)} / サーキット：${escapeHtml(selectedRace.circuitName)}</p>
+      `;
+
+      driverMetrics.innerHTML = `
+        <div class="metric">
+          <span>予測順位</span>
+          <strong>${driver.predictedPosition}位</strong>
+        </div>
+        <div class="metric">
+          <span>AIスコア</span>
+          <strong>${driver.aiScore.toFixed(1)}</strong>
+        </div>
+        <div class="metric">
+          <span>GP直前順位</span>
+          <strong>${formatPosition(driver.rankBefore)}</strong>
+        </div>
+        <div class="metric">
+          <span>前年決勝</span>
+          <strong>${formatPosition(driver.previousRacePosition)}</strong>
+        </div>
+        <div class="metric">
+          <span>前年予選</span>
+          <strong>${formatPosition(driver.previousQualifyingPosition)}</strong>
+        </div>
+        <div class="metric">
+          <span>練習走行</span>
+          <strong>${formatPosition(driver.practiceRank)}</strong>
+        </div>
+      `;
+
+      renderSimpleChart(driver);
+
+      detailCard.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function renderSimpleChart(driver) {
+      const items = [
+        { label: "GP直前順位", value: driver.rankBefore },
+        { label: "前年決勝", value: driver.previousRacePosition },
+        { label: "前年予選", value: driver.previousQualifyingPosition },
+        { label: "練習走行", value: driver.practiceRank },
+        { label: "予測順位", value: driver.predictedPosition }
+      ];
+
+      simpleChart.innerHTML = "";
+
+      items.forEach(item => {
+        const displayValue = item.value ? item.value : 20;
+        const width = Math.max(5, 100 - displayValue * 4);
+
+        const row = document.createElement("div");
+        row.className = "bar-row";
+
+        row.innerHTML = `
+          <span>${escapeHtml(item.label)}</span>
+          <div class="bar-bg">
+            <div class="bar-fill" style="width: ${width}%"></div>
+          </div>
+          <strong>${formatPosition(item.value)}</strong>
+        `;
+
+        simpleChart.appendChild(row);
+      });
+    }
+
+    reloadButton.addEventListener("click", () => {
+      cache.clear();
+      if (selectedRace) {
+        selectRace(selectedRace);
+      } else {
+        init();
+      }
+    });
+
+    init();
+  </script>
 </body>
 </html>
